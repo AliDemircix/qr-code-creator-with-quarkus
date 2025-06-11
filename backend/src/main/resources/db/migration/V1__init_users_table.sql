@@ -1,10 +1,10 @@
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    fullName VARCHAR(255),
     password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255),
-    is_admin BOOLEAN DEFAULT FALSE,
-    subscription_type VARCHAR(50) DEFAULT 'free',
-    qr_code_limit INTEGER DEFAULT 3,
-    created_at TIMESTAMP
+    role VARCHAR(255) default 'user',
+    registerTime TIMESTAMP,
+    subscriptionType VARCHAR(100) default 'free',
+    qrCodeLimit INTEGER default 3
 );
