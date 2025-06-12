@@ -1,44 +1,53 @@
 package com.qrcodeapp.resource;
 
 import com.qrcodeapp.dto.AuthRequest;
-import com.qrcodeapp.dto.AuthResponse;
+import com.qrcodeapp.dto.LoginRequest;
+import com.qrcodeapp.dto.LoginResponse;
+import com.qrcodeapp.dto.UserDto;
 import com.qrcodeapp.model.User;
+
+import io.quarkus.elytron.security.common.BcryptUtil;
+import io.smallrye.jwt.build.Jwt;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.mindrot.jbcrypt.BCrypt;
-import org.jboss.logging.Logger;
 
 @Path("/auth")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class AuthResource {
-
-    private static final Logger LOGGER = Logger.getLogger(AuthResource.class);
 
     @POST
     @Path("/register")
     @Transactional
-    public Response register(AuthRequest request) {
-        if (request.email == null || request.password == null || request.fullName == null) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new AuthResponse("Missing required fields"))
-                    .build();
-        }
-
-        if (User.find("email", request.email).firstResult() != null) {
+    public Response register(AuthRequest req) {
+        if (User.find("email", req.email).firstResult() != null) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity(new AuthResponse("Email already registered"))
-                    .build();
+                    .entity("Email already registered").build();
         }
+        User.add(req.email, req.password, "user", req.fullName);
+        return Response.ok("User registered successfully").build();
+    }
 
-        User user = new User();
-        user.email = request.email;
-        user.fullName = request.fullName;
-        user.password = BCrypt.hashpw(request.password, BCrypt.gensalt()); // hash password
-        user.persist();
-
-        return Response.ok(new AuthResponse("User registered successfully")).build();
+    @POST
+    @Path("/login")
+    public Response login(LoginRequest req) {
+        User user = User.find("email", req.email).firstResult();
+        if (user == null || !BcryptUtil.matches(req.password, user.password)) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Invalid credentials").build();
+        }
+        String token = Jwt.issuer("qrcodeapp")
+                .upn(user.email)
+                .groups(user.role) // or a list of roles if you have more than one
+                .claim("role", user.role)
+                .sign();
+        System.out.println("Generated JWT Token: " + token);
+        LoginResponse loginResponse = new LoginResponse(token, UserDto.fromEntity(user));
+        return Response.ok(loginResponse).build();
     }
 }

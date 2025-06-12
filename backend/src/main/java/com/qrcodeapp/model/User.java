@@ -2,39 +2,40 @@ package com.qrcodeapp.model;
 
 import java.time.LocalDateTime;
 
+import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
-import jakarta.persistence.Column;
+import io.quarkus.security.jpa.Password;
+import io.quarkus.security.jpa.Roles;
+import io.quarkus.security.jpa.UserDefinition;
+import io.quarkus.security.jpa.Username;
 import jakarta.persistence.Entity;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+
 
 @Entity
 @Table(name = "users")
+@UserDefinition 
 public class User extends PanacheEntity {
-
-    @Column(nullable = false, unique = true)
-    public String email;
-
-    @Column(nullable = false)
-    public String password; // hashed password
-
-    @Column(name = "full_name")
+    @Username
+    public String email; 
     public String fullName;
+    @Password
+    public String password; // Store hashed password
+    @Roles
+    public String role;
+    public LocalDateTime registerTime;
+    public String subscriptionType;
+    public int qrCodeLimit;
 
-    @Column(name = "is_admin")
-    public boolean isAdmin = false;
-
-    @Column(name = "subscription_type")
-    public String subscriptionType = "free"; // free or premium
-
-    @Column(name = "qr_code_limit")
-    public int qrCodeLimit = 3; // default for free users
-
-    @Column(name = "created_at")
-    public LocalDateTime createdAt;
-
-    @PrePersist
-    public void setCreatedAt() {
-        this.createdAt = LocalDateTime.now();
+       public static void add(String email, String password, String role, String username) { 
+        User user = new User();
+        user.email = email;
+        user.fullName = username; // Default full name is the username
+        user.password = BcryptUtil.bcryptHash(password);
+        user.role = role;
+        user.registerTime = LocalDateTime.now();
+        user.subscriptionType = "free"; // Default subscription type
+        user.qrCodeLimit = 3; // Default QR code limit
+        user.persist();
     }
 }
