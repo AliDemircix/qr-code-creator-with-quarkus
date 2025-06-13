@@ -3,14 +3,11 @@ package com.qrcodeapp.resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.jwt.JsonWebToken;
-
 import com.qrcodeapp.dto.QrCodeDto;
 import com.qrcodeapp.model.QrCode;
 import com.qrcodeapp.model.User;
 
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -31,9 +28,6 @@ import jakarta.ws.rs.core.SecurityContext;
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed({"user", "admin"})
 public class QrCodeResources {
-
-    @Inject
-    JsonWebToken jwt;
 
     @Context
     SecurityContext securityContext;
